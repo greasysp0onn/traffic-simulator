@@ -1,102 +1,95 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+let coins = 0;
+let coinsPerClick = 1;
+let autoClickers = 0;
 
-let cars = [];
-let score = 0;
-let gameRunning = false;
+let clickUpgradeCost = 10;
+let autoUpgradeCost = 50;
 
-let lightState = "vertical"; // vertical or horizontal
-let lightTimer = 0;
+function saveGame() {
+    localStorage.setItem("clickerSave", JSON.stringify({
+        coins,
+        coinsPerClick,
+        autoClickers,
+        clickUpgradeCost,
+        autoUpgradeCost
+    }));
+}
+
+function loadGame() {
+    let save = JSON.parse(localStorage.getItem("clickerSave"));
+    if (save) {
+        coins = save.coins;
+        coinsPerClick = save.coinsPerClick;
+        autoClickers = save.autoClickers;
+        clickUpgradeCost = save.clickUpgradeCost;
+        autoUpgradeCost = save.autoUpgradeCost;
+    }
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById("coins").innerText = coins;
+    document.getElementById("cpc").innerText = coinsPerClick;
+    document.getElementById("auto").innerText = autoClickers;
+    document.getElementById("clickCost").innerText = clickUpgradeCost;
+    document.getElementById("autoCost").innerText = autoUpgradeCost;
+}
+
+function clickCoin() {
+    coins += coinsPerClick;
+    updateUI();
+    saveGame();
+}
+
+function buyUpgrade(type) {
+    if (type === "click" && coins >= clickUpgradeCost) {
+        coins -= clickUpgradeCost;
+        coinsPerClick++;
+        clickUpgradeCost = Math.floor(clickUpgradeCost * 1.5);
+    }
+
+    if (type === "auto" && coins >= autoUpgradeCost) {
+        coins -= autoUpgradeCost;
+        autoClickers++;
+        autoUpgradeCost = Math.floor(autoUpgradeCost * 1.7);
+    }
+
+    updateUI();
+    saveGame();
+}
+
+function autoClickLoop() {
+    coins += autoClickers;
+    updateUI();
+    saveGame();
+}
+
+setInterval(autoClickLoop, 1000);
 
 function startGame() {
-    cars = [];
-    score = 0;
-    gameRunning = true;
-    document.getElementById("score").innerText = score;
-    requestAnimationFrame(gameLoop);
+    document.getElementById("mainMenu").classList.add("hidden");
+    document.getElementById("gameScreen").classList.remove("hidden");
 }
 
-function spawnCar() {
-    const directions = ["top", "bottom", "left", "right"];
-    const dir = directions[Math.floor(Math.random() * 4)];
-    let car = { x: 0, y: 0, width: 20, height: 20, dir: dir, speed: 2 };
-
-    if (dir === "top") { car.x = 290; car.y = 0; }
-    if (dir === "bottom") { car.x = 290; car.y = 580; }
-    if (dir === "left") { car.x = 0; car.y = 290; }
-    if (dir === "right") { car.x = 580; car.y = 290; }
-
-    cars.push(car);
+function openSettings() {
+    document.getElementById("mainMenu").classList.add("hidden");
+    document.getElementById("settingsScreen").classList.remove("hidden");
 }
 
-function updateCars() {
-    cars.forEach(car => {
-        if (car.dir === "top" && lightState === "vertical") car.y += car.speed;
-        if (car.dir === "bottom" && lightState === "vertical") car.y -= car.speed;
-        if (car.dir === "left" && lightState === "horizontal") car.x += car.speed;
-        if (car.dir === "right" && lightState === "horizontal") car.x -= car.speed;
-    });
-
-    // Remove cars that pass intersection
-    cars = cars.filter(car => {
-        if (car.x < -20 || car.x > 620 || car.y < -20 || car.y > 620) {
-            score++;
-            document.getElementById("score").innerText = score;
-            return false;
-        }
-        return true;
-    });
+function goToMenu() {
+    document.getElementById("gameScreen").classList.add("hidden");
+    document.getElementById("settingsScreen").classList.add("hidden");
+    document.getElementById("mainMenu").classList.remove("hidden");
 }
 
-function detectCollisions() {
-    for (let i = 0; i < cars.length; i++) {
-        for (let j = i + 1; j < cars.length; j++) {
-            if (
-                cars[i].x < cars[j].x + 20 &&
-                cars[i].x + 20 > cars[j].x &&
-                cars[i].y < cars[j].y + 20 &&
-                cars[i].y + 20 > cars[j].y
-            ) {
-                gameRunning = false;
-                alert("Crash! Game Over!");
-            }
-        }
-    }
+function resetGame() {
+    localStorage.removeItem("clickerSave");
+    coins = 0;
+    coinsPerClick = 1;
+    autoClickers = 0;
+    clickUpgradeCost = 10;
+    autoUpgradeCost = 50;
+    updateUI();
 }
 
-function updateLights() {
-    lightTimer++;
-    if (lightTimer > 180) {
-        lightState = lightState === "vertical" ? "horizontal" : "vertical";
-        lightTimer = 0;
-    }
-}
-
-function drawIntersection() {
-    ctx.fillStyle = "#333";
-    ctx.fillRect(250, 0, 100, 600);
-    ctx.fillRect(0, 250, 600, 100);
-}
-
-function drawCars() {
-    ctx.fillStyle = "yellow";
-    cars.forEach(car => {
-        ctx.fillRect(car.x, car.y, car.width, car.height);
-    });
-}
-
-function gameLoop() {
-    if (!gameRunning) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    drawIntersection();
-    updateLights();
-    updateCars();
-    detectCollisions();
-    drawCars();
-
-    if (Math.random() < 0.02) spawnCar();
-
-    requestAnimationFrame(gameLoop);
-}
+loadGame();
