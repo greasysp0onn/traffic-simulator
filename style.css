@@ -1,11 +1,26 @@
 body {
     text-align: center;
-    background: #222;
+    background: #121212;
     color: white;
     font-family: Arial;
 }
 
-canvas {
-    background: #444;
-    border: 3px solid white;
+.screen {
+    margin-top: 50px;
+}
+
+.hidden {
+    display: none;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#clickButton {
+    font-size: 30px;
+    padding: 20px 40px;
 }
